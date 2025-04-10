@@ -6,14 +6,17 @@ import 'package:habit_tracker/screens/current_day_screen.dart';
 import 'package:habit_tracker/screens/goals_screen.dart';
 import 'package:habit_tracker/screens/calendar_screen.dart';
 import 'package:habit_tracker/screens/history_screen.dart';
+import 'package:habit_tracker/services/api_dio.dart'; // ⬅️ новый импорт
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiClient.setup(); // ⬅️ инициализация cookie-хранилища
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
@@ -28,7 +31,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: const LandingPage(),
+      home: const LandingPage(), // здесь решается куда идти: login/регистрация
     );
   }
 }
@@ -43,15 +46,13 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  // Список экранов
   final List<Widget> _screens = [
-    CurrentDayScreen(),
-    GoalsScreen(),
-    CalendarScreen(),
-    HistoryScreen(),
+    const CurrentDayScreen(),
+    const GoalsScreen(),
+    const CalendarScreen(),
+    const HistoryScreen(),
   ];
 
-  // Изменение вкладки
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -67,7 +68,7 @@ class _MainNavigationState extends State<MainNavigation> {
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.green,
-        items: [
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.today),
             label: 'Current Day',

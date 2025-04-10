@@ -1,58 +1,53 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../models/goal.dart';
+import 'package:habit_tracker/models/goal.dart';
+import 'package:habit_tracker/services/api_dio.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:3001";
-
-  static Future<List<Goal>> fetchGoals(String token) async {
-    final url = Uri.parse('$baseUrl/goals');
-    final response = await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
+  Future<List<Goal>> getUserGoals() async {
+    final response = await ApiClient.dio.get('/goals');
 
     if (response.statusCode == 200) {
-      final List<dynamic> jsonData = jsonDecode(response.body);
-      return jsonData.map((item) => Goal.fromJson(item)).toList();
+      final List<dynamic> data = response.data;
+      return data.map((json) => Goal.fromJson(json)).toList();
     } else {
-      throw Exception('Не удалось загрузить цели');
+      throw Exception('Не удалось загрузить цели: ${response.data['error'] ?? response.statusMessage}');
     }
   }
 
-  static Future<http.Response> register(String name, String email, String password) async {
-    return await http.post(
-      Uri.parse('$baseUrl/auth/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'name': name,
-        'email': email,
-        'password': password,
-      }),
-    );
+  Future<List<Habit>> getAvailableHabits() async {
+    final response = await ApiClient.dio.get('/habits');
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = response.data;
+      return data.map((json) => Habit.fromJson(json)).toList();
+    } else {
+      throw Exception('Не удалось загрузить привычки: ${response.data['error'] ?? response.statusMessage}');
+    }
   }
 
-  static Future<http.Response> login(String email, String password) async {
-    return await http.post(
-      Uri.parse('$baseUrl/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
-    );
+  Future<Goal> createGoal({
+    required int habitId,
+    required DateTime startDate,
+    required DateTime endDate,
+    required int targetCount,
+  }) async {
+    final response = await ApiClient.dio.post('/goals', data: {
+      'habit_id': habitId,
+      'start_date': startDate.toIso8601String(),
+      'end_date': endDate.toIso8601String(),
+      'target_count': targetCount,
+    });
+
+    if (response.statusCode == 201) {
+      return Goal.fromJson(response.data);
+    } else {
+      throw Exception('Не удалось создать цель: ${response.data['error'] ?? response.statusMessage}');
+    }
   }
 
-  static Future<http.Response> logout(String token) async {
-    return await http.post(
-      Uri.parse('$baseUrl/auth/logout'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'authToken=$token',
-      },
-    );
+  Future<void> logout() async {
+    final response = await ApiClient.dio.post('/auth/logout');
+    if (response.statusCode != 200) {
+      throw Exception('Ошибка при выходе: ${response.data['error'] ?? response.statusMessage}');
+    }
   }
 }
